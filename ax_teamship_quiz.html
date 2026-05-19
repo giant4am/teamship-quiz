@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 학급은 팀인가요? — AX Teamship 자가진단</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:#F2F0EC;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:2rem 1rem 5rem;
+}
+#app{width:100%;max-width:500px;}
+
+.card{background:#fff;border-radius:18px;border:1px solid #E6E2D9;padding:1.5rem;margin-bottom:.875rem;}
+
+/* Likert */
+.likert{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:1.125rem;}
+.lb{
+  padding:11px 4px 10px;
+  border-radius:11px;
+  border:1.5px solid #E6E2D9;
+  background:#fff;
+  font-size:11px;
+  color:#888;
+  cursor:pointer;
+  text-align:center;
+  line-height:1.45;
+  transition:all .13s;
+  font-family:inherit;
+}
+.lb:hover{border-color:#1D6B5A;background:#EDF7F4;color:#1D6B5A;}
+.lb.sel{border-color:#1D6B5A;background:#1D6B5A;color:#fff;font-weight:600;}
+
+/* Progress */
+.pbg{height:4px;background:#E6E2D9;border-radius:2px;}
+.pf{height:4px;background:#1D6B5A;border-radius:2px;transition:width .35s;}
+
+/* Buttons */
+.btn-main{
+  width:100%;padding:15px;
+  background:#1D6B5A;color:#fff;
+  border:none;border-radius:13px;
+  font-size:16px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  transition:opacity .13s;
+}
+.btn-main:hover{opacity:.87;}
+.btn-ghost{
+  width:100%;padding:12px;
+  background:transparent;color:#999;
+  border:1.5px solid #D8D3C8;
+  border-radius:13px;font-size:14px;
+  cursor:pointer;font-family:inherit;
+  transition:background .13s;
+}
+.btn-ghost:hover{background:#F2F0EC;}
+
+.info-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F0ECE4;}
+.info-row:last-child{border-bottom:none;}
+
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.05em;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const EL=[
+  {k:'TRUST',  lb:'TRUST',    sub:'심리적 안전감', col:'#2579A8', bg:'#E8F3FA'},
+  {k:'ENERGY', lb:'ENERGY',   sub:'인정과 연결',   col:'#D4762A', bg:'#FDF0E4'},
+  {k:'GROWTH', lb:'GROWTH',   sub:'진솔한 피드백', col:'#6B4DA0', bg:'#F0EBF8'},
+  {k:'MOMENTUM',lb:'MOMENTUM',sub:'실행 시스템',   col:'#1D6B5A', bg:'#EDF7F4'},
+  {k:'AI',     lb:'AI',       sub:'AI 통합',      col:'#B0404E', bg:'#FAE9EB'}
+];
+
+const Q=[
+  {el:'TRUST',   sc:'수업 장면',  tx:'우리 반 아이들은 수업 시간에 "모르겠어요"라고 편하게 말할 수 있다'},
+  {el:'TRUST',   sc:'발표 순간',  tx:'아이가 발표에서 틀렸을 때 반 아이들이 웃거나 야유하지 않는 분위기가 자연스럽게 만들어져 있다'},
+  {el:'ENERGY',  sc:'모둠 활동',  tx:'우리 반 아이들 사이에서 서로의 노력과 기여를 구체적으로 인정하는 말이 오간다'},
+  {el:'ENERGY',  sc:'쉬는 시간',  tx:'힘들어 보이는 친구가 있을 때 반 아이들이 먼저 다가가 살펴주는 문화가 있다'},
+  {el:'GROWTH',  sc:'갈등 상황',  tx:'아이들이 불편한 상황을 폭발하거나 참는 대신, 말로 표현하고 해결하려는 시도를 한다'},
+  {el:'GROWTH',  sc:'생활지도',   tx:'나는 아이의 문제 행동을 지도할 때 감정적 반응보다 관찰과 느낌·부탁으로 구조적으로 말한다'},
+  {el:'MOMENTUM',sc:'학급 약속',  tx:'우리 반에는 아이들이 함께 만든 학급 약속이 있고, 이를 정기적으로 점검하고 있다'},
+  {el:'MOMENTUM',sc:'역할 구조',  tx:'우리 반 아이들은 각자 학급 안에서 맡은 역할이 있고, 그것으로 학급에 실제로 기여하고 있다'},
+  {el:'AI',      sc:'AI 활용',   tx:'나는 AI를 학급 관찰 기록·학부모 소통·활동 설계 등 학급 운영에 실제로 활용해 본 적이 있다'},
+  {el:'AI',      sc:'AI 판단',   tx:'AI가 제안한 내용을 그대로 쓰지 않고, 우리 반 아이들의 상황에 맞게 판단하고 수정해서 활용한다'}
+];
+
+const SC=['전혀\n아니다','가끔\n그렇다','자주\n그렇다','항상\n그렇다'];
+
+const FOCUS={
+  TRUST:   '심리적 안전감 파트에서 "틀려도 괜찮은 구조"를 어떻게 만드는지 집중해 들어보세요.',
+  ENERGY:  '인정과 연결 파트에서 구체적 인정 언어와 에너지 루틴 만드는 법을 챙겨가세요.',
+  GROWTH:  '비폭력대화(NVC) 4단계 실습 파트에서 실제 대화 구조를 꼭 연습해 보세요.',
+  MOMENTUM:'팀십을 분위기가 아닌 시스템으로 만드는 학급 약속·역할·루틴 구조를 가져가세요.',
+  AI:      'AI 통합 파트에서 내일 바로 쓸 수 있는 프롬프트 5가지 기준을 꼭 챙겨가세요.'
+};
+
+let cur=-1, ans=new Array(Q.length).fill(0);
+
+function elOf(k){return EL.find(e=>e.k===k);}
+function start(){cur=0;ans=new Array(Q.length).fill(0);render();}
+function reset(){cur=-1;ans=new Array(Q.length).fill(0);render();}
+function pick(v){
+  ans[cur]=v;
+  setTimeout(()=>{cur++;render();},180);
+}
+
+function render(){
+  const app=document.getElementById('app');
+  if(cur===-1)      app.innerHTML=pageStart();
+  else if(cur<Q.length) app.innerHTML=pageQ();
+  else              app.innerHTML=pageResult();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function pageStart(){return`
+<div style="text-align:center;padding:2.75rem 0 1.5rem;">
+  <span class="tag" style="background:#EDF7F4;color:#1D6B5A;margin-bottom:14px;">AX TEAMSHIP 사전 자가진단</span>
+  <p style="font-size:27px;font-weight:700;color:#1A1916;margin:14px 0 14px;line-height:1.25;">우리 학급은<br>팀인가요?</p>
+  <p style="font-size:14px;color:#666;line-height:1.85;">강연 전, 우리 반의 팀십 현황을<br>5대 요소로 솔직하게 점검해보세요</p>
+</div>
+<div class="card" style="margin-bottom:1rem;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #F0ECE4;">
+    ${EL.map(e=>`<span style="font-size:11px;font-weight:700;background:${e.bg};color:${e.col};padding:4px 10px;border-radius:8px;">${e.lb}</span>`).join('')}
+  </div>
+  <div class="info-row">
+    <span style="font-size:13px;color:#999;">총 문항</span>
+    <span style="font-size:13px;font-weight:700;color:#1A1916;">10문항</span>
+  </div>
+  <div class="info-row">
+    <span style="font-size:13px;color:#999;">소요 시간</span>
+    <span style="font-size:13px;font-weight:700;color:#1A1916;">약 3분</span>
+  </div>
+  <div class="info-row">
+    <span style="font-size:13px;color:#999;">결과</span>
+    <span style="font-size:13px;font-weight:700;color:#1A1916;">요소별 팀십 온도</span>
+  </div>
+</div>
+<p style="font-size:13px;color:#aaa;line-height:1.85;text-align:center;margin-bottom:1.5rem;">정답은 없습니다.<br>현재 우리 반의 모습을 솔직하게 선택해 주세요.</p>
+<button class="btn-main" onclick="start()">진단 시작하기</button>
+`;}
+
+function pageQ(){
+  const q=Q[cur];
+  const el=elOf(q.el);
+  const pct=Math.round((cur/Q.length)*100);
+  const btns=SC.map((s,i)=>`<button class="lb${ans[cur]===i+1?' sel':''}" onclick="pick(${i+1})">${s.replace('\n','<br>')}</button>`).join('');
+  return`
+<div style="margin-bottom:1.5rem;">
+  <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+    <span style="font-size:13px;color:#aaa;font-weight:500;">Q${cur+1} / ${Q.length}</span>
+    <span style="font-size:13px;color:#aaa;">${pct}%</span>
+  </div>
+  <div class="pbg"><div class="pf" style="width:${pct}%;"></div></div>
+</div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:.875rem;">
+  <span style="width:8px;height:8px;border-radius:50%;background:${el.col};flex-shrink:0;display:inline-block;"></span>
+  <span style="font-size:11px;font-weight:700;color:${el.col};letter-spacing:.06em;">${el.lb} · ${el.sub}</span>
+</div>
+<div class="card" style="margin-bottom:.875rem;">
+  <p style="font-size:11px;color:#bbb;font-weight:500;margin:0 0 10px;">${q.sc}</p>
+  <p style="font-size:16px;color:#1A1916;line-height:1.8;margin:0;">${q.tx}</p>
+</div>
+<div class="likert">${btns}</div>
+<p style="font-size:12px;color:#ccc;text-align:center;margin-top:12px;">선택하면 자동으로 다음으로 넘어갑니다</p>
+`;}
+
+function pageResult(){
+  // scores per element
+  const sc={};
+  EL.forEach(e=>{sc[e.k]=0;});
+  Q.forEach((q,i)=>{sc[q.el]+=ans[i];});
+  const total=Object.values(sc).reduce((a,b)=>a+b,0);
+  
+  // level
+  let lv,lc,lb2,ld;
+  if(total>=34){lv='팀십 선도 교실';lc='#1D6B5A';lb2='#EDF7F4';ld='이미 팀십의 핵심 가치를 실천하고 있습니다. 강연에서 더 정교한 시스템을 가져가세요.';}
+  else if(total>=24){lv='팀십 성장 교실';lc='#2579A8';lb2='#E8F3FA';ld='기반은 있습니다. 각 요소를 시스템으로 연결하는 것이 다음 단계입니다.';}
+  else if(total>=13){lv='팀십 씨앗 교실';lc='#D4762A';lb2='#FDF0E4';ld='가능성은 충분합니다. 구조와 루틴이 더해지면 빠르게 달라집니다.';}
+  else{lv='팀십 시작 교실';lc='#6B4DA0';lb2='#F0EBF8';ld='오늘 강연이 딱 필요한 타이밍입니다. 함께 첫 걸음을 내딛어요.';}
+
+  // weakest / strongest
+  const sorted=[...EL].sort((a,b)=>sc[a.k]-sc[b.k]);
+  const wk=sorted[0], st=sorted[sorted.length-1];
+
+  // element bars
+  const bars=EL.map(e=>{
+    const s=sc[e.k], p=Math.round((s/8)*100);
+    let tag,tc;
+    if(s>=7){tag='강점';tc=e.col;}
+    else if(s>=5){tag='성장 중';tc='#2579A8';}
+    else if(s>=3){tag='주목';tc='#D4762A';}
+    else{tag='집중 필요';tc='#B0404E';}
+    return`
+<div style="margin-bottom:15px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+    <div style="display:flex;align-items:center;gap:7px;">
+      <span style="width:7px;height:7px;border-radius:50%;background:${e.col};display:inline-block;flex-shrink:0;"></span>
+      <span style="font-size:13px;font-weight:700;color:#1A1916;">${e.lb}</span>
+      <span style="font-size:11px;color:#aaa;">${e.sub}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;">
+      <span style="font-size:11px;font-weight:700;color:${tc};background:${tc}18;padding:2px 9px;border-radius:9px;">${tag}</span>
+      <span style="font-size:13px;font-weight:700;color:#1A1916;">${s}<span style="font-size:11px;color:#ccc;font-weight:400;">/8</span></span>
+    </div>
+  </div>
+  <div class="pbg" style="height:7px;border-radius:4px;">
+    <div style="height:7px;border-radius:4px;background:${e.col};width:${p}%;transition:width .6s;"></div>
+  </div>
+</div>`;
+  }).join('');
+
+  return`
+<div style="text-align:center;padding:2rem 0 1rem;">
+  <p style="font-size:11px;color:#aaa;letter-spacing:.12em;margin:0 0 10px;">진단 결과</p>
+  <span class="tag" style="background:${lb2};color:${lc};margin-bottom:14px;">${lv}</span>
+  <div style="display:flex;align-items:baseline;justify-content:center;gap:5px;margin:14px 0 10px;">
+    <span style="font-size:54px;font-weight:700;color:#1A1916;line-height:1;">${total}</span>
+    <span style="font-size:20px;color:#ccc;">/ 40</span>
+  </div>
+  <p style="font-size:14px;color:#666;line-height:1.8;padding:0 1.25rem;">${ld}</p>
+</div>
+
+<div class="card">
+  <p style="font-size:11px;font-weight:700;color:#aaa;letter-spacing:.08em;margin-bottom:16px;">5대 요소별 팀십 온도</p>
+  ${bars}
+</div>
+
+<div style="background:${wk.bg};border:1px solid ${wk.col}30;border-radius:16px;padding:1.375rem;margin:.875rem 0;">
+  <p style="font-size:11px;font-weight:700;color:${wk.col};letter-spacing:.07em;margin:0 0 8px;">오늘 강연에서 특히 주목하세요</p>
+  <p style="font-size:15px;font-weight:700;color:#1A1916;margin:0 0 6px;">${wk.lb} · ${wk.sub}</p>
+  <p style="font-size:14px;color:#555;line-height:1.8;margin:0;">${FOCUS[wk.k]}</p>
+</div>
+
+${st.k!==wk.k?`
+<div style="background:#EDF7F4;border:1px solid #1D6B5A30;border-radius:16px;padding:1.375rem;margin-bottom:.875rem;">
+  <p style="font-size:11px;font-weight:700;color:#1D6B5A;letter-spacing:.07em;margin:0 0 8px;">이미 잘하고 있어요</p>
+  <p style="font-size:15px;font-weight:700;color:#1A1916;margin:0 0 6px;">${st.lb} · ${st.sub}</p>
+  <p style="font-size:14px;color:#555;line-height:1.8;margin:0;">이 영역이 선생님의 강점입니다. 강연에서 이 경험을 동료와 함께 나눠보세요.</p>
+</div>`:''}
+
+<div style="background:#F2F0EC;border-radius:13px;padding:1rem 1.25rem;text-align:center;margin-bottom:1.25rem;">
+  <p style="font-size:13px;color:#999;margin:0;line-height:1.85;">이 결과를 강연 당일 가져오세요.<br>선생님들의 이야기를 함께 나눠봅니다.</p>
+</div>
+
+<button class="btn-ghost" onclick="reset()">다시 진단하기</button>
+`;}
+
+render();
+</script>
+</body>
+</html>
