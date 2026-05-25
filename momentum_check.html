@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실행 시스템 자가진단 — AX Teamship</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:#12203A;
+  min-height:100vh;
+  padding:2.5rem 1.25rem 4rem;
+  color:#fff;
+}
+#app{width:100%;max-width:480px;margin:0 auto;}
+
+h1{
+  font-size:26px;font-weight:800;
+  text-align:center;margin-bottom:10px;
+  letter-spacing:-.01em;line-height:1.2;
+}
+.sub{
+  font-size:14px;color:#8FA8C8;
+  text-align:center;margin-bottom:2rem;line-height:1.6;
+}
+
+/* 체크 항목 */
+.item{
+  display:flex;align-items:center;gap:0;
+  background:#1E2F4A;border-radius:12px;
+  margin-bottom:10px;overflow:hidden;
+  cursor:pointer;transition:background .15s;
+  border:1.5px solid transparent;
+}
+.item:active{transform:scale(.99);}
+.item.checked{
+  background:#1E3A35;
+  border-color:#2A9D8F;
+}
+.num{
+  min-width:52px;height:56px;
+  background:#2A6B7C;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;color:#fff;
+  flex-shrink:0;transition:background .15s;
+}
+.item.checked .num{background:#2A9D8F;}
+.txt{
+  font-size:14px;color:#E0EAF5;
+  line-height:1.6;padding:14px 14px 14px 16px;
+  flex:1;
+}
+.item.checked .txt{color:#fff;}
+.chk{
+  width:24px;height:24px;border-radius:6px;
+  border:2px solid #3A5070;
+  margin-right:14px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.item.checked .chk{
+  background:#2A9D8F;border-color:#2A9D8F;
+}
+.chk-mark{
+  width:13px;height:9px;
+  border-left:2.5px solid #fff;
+  border-bottom:2.5px solid #fff;
+  transform:rotate(-45deg) translateY(-1px);
+  opacity:0;transition:opacity .15s;
+}
+.item.checked .chk-mark{opacity:1;}
+
+/* 결과 버튼 */
+.btn{
+  width:100%;padding:15px;
+  background:#2A9D8F;color:#fff;
+  border:none;border-radius:12px;
+  font-size:16px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  margin-top:1.5rem;transition:opacity .13s;
+}
+.btn:hover{opacity:.88;}
+
+/* 카운터 */
+.counter{
+  text-align:center;margin-top:1rem;
+  font-size:13px;color:#8FA8C8;
+}
+.cnt-num{
+  font-size:20px;font-weight:700;color:#2A9D8F;
+}
+
+/* 결과 화면 */
+#result{display:none;}
+.result-card{
+  background:#1E2F4A;border-radius:16px;
+  padding:1.5rem;margin-bottom:1rem;
+  border:1.5px solid #2A4A6A;
+}
+.result-badge{
+  display:inline-block;
+  font-size:12px;font-weight:700;
+  padding:4px 14px;border-radius:20px;
+  margin-bottom:12px;letter-spacing:.05em;
+}
+.result-title{
+  font-size:22px;font-weight:800;
+  margin-bottom:10px;
+}
+.result-desc{
+  font-size:14px;color:#B0C8E0;
+  line-height:1.8;
+}
+.score-display{
+  text-align:center;padding:1.5rem 0 1rem;
+}
+.score-num{
+  font-size:56px;font-weight:800;
+  line-height:1;
+}
+.score-max{font-size:20px;color:#8FA8C8;}
+.reset-btn{
+  width:100%;padding:12px;
+  background:transparent;color:#8FA8C8;
+  border:1.5px solid #2A4A6A;border-radius:12px;
+  font-size:14px;cursor:pointer;font-family:inherit;
+  margin-top:.5rem;transition:background .13s;
+}
+.reset-btn:hover{background:#1E2F4A;}
+
+/* guide bar */
+.guide-bar{
+  background:#1E2F4A;border:1px solid #2A4A6A;
+  border-radius:10px;padding:.875rem 1rem;
+  margin-bottom:1.25rem;
+  font-size:13px;color:#8FA8C8;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 진단 화면 -->
+  <div id="quiz">
+    <h1>실행 시스템<br>자가진단</h1>
+    <p class="sub">현재 우리 반의 상태를<br>솔직하게 체크해 보세요.</p>
+
+    <div class="item" onclick="toggle(0)" id="i0">
+      <div class="num">01</div>
+      <div class="txt">우리 반은 함께 이루고 싶은 공동 목표가 있다.</div>
+      <div class="chk"><div class="chk-mark"></div></div>
+    </div>
+    <div class="item" onclick="toggle(1)" id="i1">
+      <div class="num">02</div>
+      <div class="txt">모든 학생이 학급에 기여할 수 있는 역할을 하나 이상 가지고 있다.</div>
+      <div class="chk"><div class="chk-mark"></div></div>
+    </div>
+    <div class="item" onclick="toggle(2)" id="i2">
+      <div class="num">03</div>
+      <div class="txt">우리 반에는 문제 상황이 생겼을 때 돌아갈 수 있는 공동의 약속이 있다.</div>
+      <div class="chk"><div class="chk-mark"></div></div>
+    </div>
+    <div class="item" onclick="toggle(3)" id="i3">
+      <div class="num">04</div>
+      <div class="txt">실수나 갈등이 생겼을 때, 개인을 탓하기보다 우리 반의 약속과 시스템을 함께 점검한다.</div>
+      <div class="chk"><div class="chk-mark"></div></div>
+    </div>
+    <div class="item" onclick="toggle(4)" id="i4">
+      <div class="num">05</div>
+      <div class="txt">우리 반은 정기적으로 팀십 온도를 확인하고, 잘한 점과 보완할 점을 함께 나눈다.</div>
+      <div class="chk"><div class="chk-mark"></div></div>
+    </div>
+
+    <div class="counter">
+      <span class="cnt-num" id="cnt">0</span> / 5 개 체크됨
+    </div>
+    <button class="btn" onclick="showResult()">결과 확인하기</button>
+  </div>
+
+  <!-- 결과 화면 -->
+  <div id="result">
+    <div class="score-display">
+      <p style="font-size:11px;color:#8FA8C8;letter-spacing:.12em;margin-bottom:8px;">진단 결과</p>
+      <div>
+        <span class="score-num" id="score-num">0</span>
+        <span class="score-max"> / 5</span>
+      </div>
+    </div>
+
+    <div class="result-card" id="result-card">
+      <span class="result-badge" id="result-badge"></span>
+      <div class="result-title" id="result-title"></div>
+      <div class="result-desc" id="result-desc"></div>
+    </div>
+
+    <div class="guide-bar">
+      강연에서 실행 시스템을 만드는<br>구체적인 방법을 함께 살펴봅니다.
+    </div>
+
+    <button class="reset-btn" onclick="resetQuiz()">다시 진단하기</button>
+  </div>
+
+</div>
+<script>
+let checked=[false,false,false,false,false];
+
+function toggle(i){
+  checked[i]=!checked[i];
+  const el=document.getElementById('i'+i);
+  if(checked[i]) el.classList.add('checked');
+  else el.classList.remove('checked');
+  document.getElementById('cnt').textContent=checked.filter(Boolean).length;
+}
+
+function showResult(){
+  const n=checked.filter(Boolean).length;
+  document.getElementById('score-num').textContent=n;
+
+  let badge,bcolor,bbg,title,desc;
+  if(n<=1){
+    badge='위험';bcolor='#fff';bbg='#C0392B';
+    title='팀십, 지금 구조가 필요합니다';
+    desc='아직 팀십이 담임 개인의 노력에 많이 기대고 있습니다.\n가장 시급한 공동 목표 1가지부터 함께 정해 시작해보세요.';
+  } else if(n<=3){
+    badge='주의';bcolor='#fff';bbg='#E07B39';
+    title='기반은 있습니다, 구조를 채울 때입니다';
+    desc='부분적으로 실행되고 있으나, 지속되는 구조는 약할 수 있습니다.\n역할·약속·점검 루틴 중 비어 있는 부분을 보완해 주세요.';
+  } else {
+    badge='우수';bcolor='#fff';bbg='#2A9D8F';
+    title='이미 좋은 실행 기반이 있습니다';
+    desc='잘 작동하는 행동을 언어화하고,\n학생들이 스스로 이어갈 수 있도록 확장해보세요.';
+  }
+
+  const bd=document.getElementById('result-badge');
+  bd.textContent=badge;
+  bd.style.color=bcolor;
+  bd.style.background=bbg;
+
+  document.getElementById('result-title').textContent=title;
+  document.getElementById('result-desc').innerHTML=desc.replace('\n','<br>');
+
+  document.getElementById('quiz').style.display='none';
+  document.getElementById('result').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetQuiz(){
+  checked=[false,false,false,false,false];
+  for(let i=0;i<5;i++){
+    document.getElementById('i'+i).classList.remove('checked');
+  }
+  document.getElementById('cnt').textContent='0';
+  document.getElementById('quiz').style.display='block';
+  document.getElementById('result').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
